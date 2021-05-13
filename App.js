@@ -1,75 +1,76 @@
-import React, {useState, useRef} from 'react';
-import {
-  Button,
-  StatusBar,
-  StyleSheet,
-  View,
-  ScrollView,
-  Text,
-} from 'react-native';
-import {CropView} from 'react-native-image-crop-tools';
-import {launchImageLibrary} from 'react-native-image-picker';
+import React, {useState} from 'react';
+import {View} from 'react-native';
 
-const App = () => {
-  const [uri, setUri] = useState();
-  const [result, setResult] = useState(null);
-  const cropViewRef = useRef();
+// NAME - react-native-photo-view-ex
+import PhotoView from 'react-native-photo-view-ex';
+import RNFetchBlob from 'rn-fetch-blob';
+
+export default ({}) => {
+  const url =
+    'https://banner2.cleanpng.com/20180713/tre/kisspng-react-native-web-application-javascript-google-scholar-logo-5b486117ca2a66.0620183815314701038281.jpg';
+
+  const [downloaded, setDownloaded] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  let count = 0;
+  let id;
+  const trigerCount = () => {
+    if (id) {
+      clearTimeout(id);
+    }
+    count += 1;
+    id = setTimeout(() => {
+      count = 0;
+    }, 300);
+  };
+
+  const fetchFull = () => {
+    if (loading) {
+      return;
+    }
+    setLoading(true);
+    console.log('fetchFull');
+    RNFetchBlob.config({
+      fileCache: true,
+    })
+      .fetch(
+        'GET',
+        'https://cdn.freebiesupply.com/logos/large/2x/react-1-logo-png-transparent.png',
+      )
+      .then((resp) => {
+        return resp.readFile('base64');
+      })
+      .then(async (base64Data) => {
+        const dirs = RNFetchBlob.fs.dirs.CacheDir;
+        const path = dirs + `/test.png`;
+        RNFetchBlob.fs.writeFile(path, base64Data, 'base64').then(() => {
+          setDownloaded(`file://${path}`);
+        });
+      });
+  };
+  console.log(downloaded, 'downloaded');
   return (
-    <>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.container}>
-        <Button
-          title={'Clear Image'}
-          onPress={() => {
-            setUri(null);
-            setResult(null);
-          }}
-        />
-        <Button
-          title={'Pick Image'}
-          onPress={() => {
-            launchImageLibrary({noData: true}, (response) => {
-              setUri(response.uri);
-            });
-          }}
-        />
-        {uri && (
-          <CropView
-            sourceUrl={uri}
-            style={styles.cropView}
-            ref={cropViewRef}
-            onImageCrop={(res) => setResult(res)}
-            keepAspectRatio
-            aspectRatio={{width: 16, height: 9}}
-            initialImageCropFrame={{x: 100, y: 100, width: 160, height: 90}}
-            angle={90}
-          />
-        )}
-        <Button
-          title={'Get Cropped View'}
-          onPress={() => {
-            cropViewRef.current.saveImage(true, 100);
-          }}
-        />
-        <Text>Result:</Text>
-        <View style={{height: 300}}>
-          <ScrollView>
-            <Text>{JSON.stringify(result, null, 4)}</Text>
-          </ScrollView>
-        </View>
-      </View>
-    </>
+    <View style={{width: '100%', height: '100%'}}>
+      <PhotoView
+        // key={downloaded}
+        source={{uri: downloaded ? downloaded : url}}
+        scale={1}
+        minimumZoomScale={1}
+        maximumZoomScale={5}
+        onScale={(e) => {
+          console.log(e.nativeEvent,'onScale');
+          trigerCount();
+          if (count > 20) {
+            fetchFull();
+          }
+        }}
+        resizeMode="contain"
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'absolute',
+        }}
+      />
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  cropView: {
-    flex: 1,
-    backgroundColor: 'red',
-  },
-});
-
-export default App;
