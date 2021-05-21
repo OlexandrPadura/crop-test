@@ -49,19 +49,20 @@ const Img = ({item}) => {
   };
   const link = {};
   if (downloaded) {
-    link.highSource = {uri: downloaded};
+    // link.highSource = {uri: downloaded};
+    link.source = {uri: downloaded};
   }
 
   return (
     <View style={{width: width, height: '100%'}} key={item.key}>
       <PhotoView
-        {...link}
         source={{uri: item.img}}
+        {...link}
         minimumZoomScale={1}
         maximumZoomScale={5}
         onScale={(e) => {
           trigerCount();
-          if (count > 20) {
+          if (count > 15) {
             fetchFull();
           }
         }}
